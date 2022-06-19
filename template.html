@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <mate charest="utf-8" />
+    <title>Hello world!</title>
+  </head>
+  <body>
+    <h1>Natmarts Invoice</h1>
+    <ul>
+      {{#each data}}
+      <li>Order ID :  {{this.userid}}</li>
+      <li>Name : {{this.name}}</li>
+      <li>Name: {{this.name}}</li>
+      <li>Price: {{this.price}}</li>
+      <li>Quantity: {{this.quantity}}</li>
+      <li>Total: {{this.total}}</li>
+      <br />
+      {{/each}}
+    </ul>
+  </body>
+</html>

@@ -12,6 +12,7 @@ const ProductSchema = new mongoose.Schema({
  variants:[],
  discountPrice:{type:String,required:true},
  price:{type:String,required:true},
+ discountedPrice:{type:String,required:true},
  reviews:[]
 });
 

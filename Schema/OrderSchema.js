@@ -4,7 +4,7 @@ const config = require("config");
 const mongoose = require("mongoose");
 
 const OrderSchema = new mongoose.Schema({
-  userid: { type: String ,required:true , unique:false  },
+  userid: { type: String ,required:true,unique:false },
   info:{
     firstname: { type: String, required: true },
     lastname: { type: String, required: false },

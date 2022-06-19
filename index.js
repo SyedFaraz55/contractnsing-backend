@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 app.use(cors())
 
 const PORT = process.env.PORT || 8000;
-const MONGOURI = config.get("mongoURI");
+const MONGOURI = process.env.mongoURI || config.get("mongoURI");
 
 const userRoutes = require("./routes/Users");
 const auth = require("./routes/auth");

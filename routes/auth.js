@@ -15,13 +15,17 @@ router.get("/", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { error } = validate(req.body);
 
-  if (error) return res.json({status:400,message:error.details[0].message});
+  if (error) return res.json({ status: 400, message: error.details[0].message });
+
 
   let user = await User.findOne({ email: req.body.email });
-  if (!user) return res.json({status:400,message:"Invalid user or password"});
+  
+  if (!user)
+    return res.json({ status: 400, message: "Invalid user or password" });
 
   const validPassword = await bcrypt.compare(req.body.password, user.password);
-  if (!validPassword) return res.json({status:400,message:"Invalid user or password"});
+  if (!validPassword)
+    return res.json({ status: 400, message: "Invalid user or password" });
 
   const token = user.generateAuthToken();
 
@@ -29,13 +33,14 @@ router.post("/login", async (req, res) => {
 });
 
 router.post("/loginWithGoogle", async (req, res) => {
-  console.log(req.body)
+  console.log(req.body);
 
   let user = await User.findOne({ email: req.body.email });
-  if (!user) return res.json({status:400,message:"Invalid user or password"});
-  
-  const token = user.generateAuthToken();
 
+  if (!user) return res.json({status:400,message:"Invalid user or password",ok:false})
+
+
+  const token = user.generateAuthToken();
   return res.send(token);
 });
 

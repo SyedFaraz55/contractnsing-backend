@@ -7,7 +7,7 @@ const UserSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
-    minlength: 5,
+    minlength: 4,
     maxlength: 50,
   },
   email: {
@@ -24,6 +24,8 @@ const UserSchema = new mongoose.Schema({
     required: true,
   },
   mobile: String,
+  defaultAddress:{},
+  address:[]
 });
 
 UserSchema.methods.generateAuthToken = function () {
