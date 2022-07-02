@@ -4,8 +4,8 @@ const config = require("config");
 const mongoose = require("mongoose");
 
 const OrderSchema = new mongoose.Schema({
-  userid: { type: String ,required:true,unique:false },
-  info:{
+  userid: { type: String, required: true, unique: false },
+  info: {
     firstname: { type: String, required: true },
     lastname: { type: String, required: false },
     email: { type: String, required: true },
@@ -19,7 +19,8 @@ const OrderSchema = new mongoose.Schema({
     method: { type: String, required: true },
   },
   order: [],
-  cartTotal:{type:String,required:true}
+  orderStatus:Number,
+  cartTotal: { type: String, required: true },
 });
 
 OrderSchema.methods.generateAuthToken = function () {
@@ -30,10 +31,11 @@ OrderSchema.methods.generateAuthToken = function () {
 const validateOrder = (user) => {
   const schema = Joi.object({
     firstname: Joi.string().min(5).max(50).required(),
-    lastname:Joi.string().min(5).max(255),town:Joi.string().max(255),
-    code:Joi.string().min(4).max(255),
-    additional:Joi.string().min(4).max(255),
-    default:Joi.boolean(),
+    lastname: Joi.string().min(5).max(255),
+    town: Joi.string().max(255),
+    code: Joi.string().min(4).max(255),
+    additional: Joi.string().min(4).max(255),
+    default: Joi.boolean(),
     email: Joi.string().min(5).max(255).required().email(),
     address: Joi.string().min(5).max(255).required(),
     mobile: Joi.string().min(5).max(10).required(),

@@ -5,8 +5,22 @@ const bcrypt = require("bcrypt");
 const Joi = require("joi");
 const config = require("config");
 const jwt = require("jsonwebtoken");
-const { User } = require("../Schema/UserSchema");
+const { User, validate:CheckValidate } = require("../Schema/UserSchema");
 
+router.post("/checkUser", async (req, res) => {
+  console.log(req.body)
+  const { error } = CheckValidate(req.body)
+
+  if (error) return res.status(400).json({ ok: false, message: error.details[0].message });
+  console.log(error)
+
+  let user = await User.findOne({ email: req.body.email });
+  if (user) return res.status(400).json({ ok: false, message: "User already exits" });
+
+
+  return res.status(200).json({ok:true})
+
+});
 router.get("/", async (req, res) => {
   const results = await User.find();
   res.send(results);
@@ -15,11 +29,11 @@ router.get("/", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { error } = validate(req.body);
 
-  if (error) return res.json({ status: 400, message: error.details[0].message });
-
+  if (error)
+    return res.json({ status: 400, message: error.details[0].message });
 
   let user = await User.findOne({ email: req.body.email });
-  
+
   if (!user)
     return res.json({ status: 400, message: "Invalid user or password" });
 
@@ -37,8 +51,12 @@ router.post("/loginWithGoogle", async (req, res) => {
 
   let user = await User.findOne({ email: req.body.email });
 
-  if (!user) return res.json({status:400,message:"Invalid user or password",ok:false})
-
+  if (!user)
+    return res.json({
+      status: 400,
+      message: "Invalid user or password",
+      ok: false,
+    });
 
   const token = user.generateAuthToken();
   return res.send(token);

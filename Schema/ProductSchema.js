@@ -11,9 +11,10 @@ const ProductSchema = new mongoose.Schema({
  benefits:[],
  variants:[],
  discountPrice:{type:String,required:true},
- price:{type:String,required:true},
+ price:{type:Number,required:true},
  discountedPrice:{type:String,required:true},
- reviews:[]
+ reviews:[],
+ category:{type:String,required:true}
 });
 
 ProductSchema.methods.generateAuthToken = function () {
