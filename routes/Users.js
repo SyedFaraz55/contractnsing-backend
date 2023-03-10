@@ -6,7 +6,7 @@ const _ = require("lodash");
 const sgMail = require("@sendgrid/mail");
 const pdfInvoice = require("pdf-invoice");
 const niceInvoice = require("nice-invoice");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const { User, validate } = require("../Schema/UserSchema");
 sgMail.setApiKey(
   "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"
