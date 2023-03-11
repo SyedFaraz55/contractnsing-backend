@@ -1,5 +1,6 @@
 require("dotenv").config();
 const aws = require('aws-sdk')
+const fs = require("fs")
 const crypto = require('crypto')
 const {promisify} =  require('util')
 const region = 'ap-south-1'
@@ -27,4 +28,17 @@ module.exports.generateUploadURL =async  ()=> {
 
     const url =  await s3.getSignedUrlPromise('putObject',params) 
     return url
+}
+
+module.exports.uploadFile = file => {
+    console.log(file)
+    const fileStream = fs.createReadStream(file.path)
+
+    const params = {
+        Bucket:bucketName,
+        Body:fileStream,
+        Key:file.filename
+    }
+
+    return s3.upload(params).promise()
 }

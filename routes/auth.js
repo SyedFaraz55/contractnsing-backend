@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const _ = require("lodash");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const Joi = require("joi");
 const config = require("config");
 const jwt = require("jsonwebtoken");
@@ -52,11 +52,7 @@ router.post("/loginWithGoogle", async (req, res) => {
   let user = await User.findOne({ email: req.body.email });
 
   if (!user)
-    return res.json({
-      status: 400,
-      message: "Invalid user or password",
-      ok: false,
-    });
+    return res.send("")
 
   const token = user.generateAuthToken();
   return res.send(token);

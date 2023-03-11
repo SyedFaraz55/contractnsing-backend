@@ -3,8 +3,16 @@ const express = require("express");
 const auth = require("../middleware/auth");
 const router = express.Router();
 const _ = require("lodash");
-const bcrypt = require("bcrypt");
+const sgMail = require("@sendgrid/mail");
+const pdfInvoice = require("pdf-invoice");
+const niceInvoice = require("nice-invoice");
+const bcrypt = require("bcryptjs");
 const { User, validate } = require("../Schema/UserSchema");
+sgMail.setApiKey(
+  "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"
+);
+const orderid = require('order-id')('key');
+
 const { Orders, validateOrders } = require("../Schema/OrderSchema");
 const jwt = require("jsonwebtoken");
 const config = require("config");
@@ -18,6 +26,10 @@ const nodemailer = require("nodemailer");
 var pdf = require("pdf-creator-node");
 var fs = require("fs");
 var path = require("path");
+const { Deliveryapp } = require("../Schema/DeliveryAppSchema");
+const { Category } = require("../Schema/Categories");
+const { Cost } = require("../Schema/Cost");
+const { result } = require("lodash");
 // Read HTML Template
 var html = fs.readFileSync(path.resolve(__dirname, "../template.html"), "utf8");
 
@@ -72,6 +84,40 @@ router.post("/createOrder", auth, async (req, res) => {
   // console.log({ ...req.body, userid: user._id })
 });
 
+router.post("/update", async (req, res) => {
+  const query = { _id: req.body._id };
+  console.log(query);
+
+  const r = await Product.findOne({ _id: req.body._id });
+  const updateDocument = {
+    $set: req.body,
+  };
+  const result = await Product.updateOne(query, updateDocument);
+  if (result.modifiedCount > 0) {
+    return res.status(200).json({ ok: true, message: "Updated", result });
+  } else {
+    return res.status(200).json({ ok: false, message: "failed", result });
+  }
+  // console.log({ ...req.body, userid: user._id })
+});
+
+router.post("/update-category", async (req, res) => {
+  const query = { _id: req.body._id };
+  console.log(query);
+
+  const r = await Category.findOne({ _id: req.body._id });
+  const updateDocument = {
+    $set: { name: req.body.name },
+  };
+  const result = await Category.updateOne(query, updateDocument);
+  if (result.modifiedCount > 0) {
+    return res.status(200).json({ ok: true, message: "Updated", result });
+  } else {
+    return res.status(200).json({ ok: false, message: "failed", result });
+  }
+  // console.log({ ...req.body, userid: user._id })
+});
+
 router.post("/request-cancellation", async (req, res) => {
   console.log(req.body.id);
   const result = await Orders.findOneAndUpdate(
@@ -88,7 +134,9 @@ router.get("/s3url", async (req, res) => {
   const url = await s3.generateUploadURL();
   res.send({ url });
 });
-
+router.get("/health", async (req, res) => {
+  return res.status(200).send("OK");
+});
 router.get("/products", async (req, res) => {
   const products = await Product.find({});
   res.status(200).json(products);
@@ -113,12 +161,23 @@ router.get("/filter", async (req, res) => {
 });
 
 router.get("/orders", auth, async (req, res) => {
-  const orders = await Orders.find({ userid: req.user._id });
+  const orders = await Orders.find({ userid: req.user._id }).sort({
+    date: -1,
+  });
   res.json(orders);
 });
 
 router.get("/all-orders", async (req, res) => {
-  const results = await Orders.find({});
+  const results = await Orders.find({}).where({ orderStatus: { $in: [1, 2] } });
+  if (results.length > 0) {
+    return res.status(200).json({ ok: true, data: results });
+  }
+
+  return res.status(200).json({ ok: true, data: [], message: "No Results" });
+});
+
+router.get("/cancelled", async (req, res) => {
+  const results = await Orders.find({}).where({ orderStatus: 4 });
   if (results.length > 0) {
     return res.status(200).json({ ok: true, data: results });
   }
@@ -158,10 +217,11 @@ router.get("/product/:id", async (req, res) => {
 
 router.post("/razorpay", async (req, res) => {
   const { amount, name, mobile } = req.body;
+  const id = orderid.generate();
   const options = {
     amount: amount * 100,
     currency: "INR",
-    receipt: shortid.generate(),
+    receipt: id,
   };
   try {
     const response = await razor.orders.create(options);
@@ -175,61 +235,65 @@ router.post("/razorpay", async (req, res) => {
       receipt: response.receipt,
     });
   } catch (error) {
-    console.log(error);
+    return res.json({ok:false})
   }
 });
 
-router.post("/pdf", async (req, res) => {
-  const orders = await Orders.find({
-    order: { $elemMatch: { id: req.body.id } },
-  });
-  var options = {
-    format: "A3",
-    orientation: "portrait",
-    border: "10mm",
+router.get("/test", async (req, res) => {});
+
+router.get("/pdf/:id", async (req, res) => {
+  const order = await Orders.findOne({ _id: req.params.id });
+  const invoiceDetail = {
+    shipping: {
+      name: order.info.firstname + " " + order.info.lastname,
+      address: order.info.address,
+      city: order.info.city,
+      country: order.info.country,
+      state: "Hyderabad",
+      postal_code: order.info.code,
+    },
+    items: order?.order?.map((pr) => {
+      return {
+        item: pr.name,
+        description: pr.description,
+        quantity: pr.quantity,
+        price: 100,
+        tax: "",
+      };
+    }),
+
+    total: parseInt(order.cartTotal),
+    order_number: req.params.id,
     header: {
-      height: "45mm",
-      contents: '<div style="text-align: center;">Author: Shyam Hajare</div>',
+      company_name: "Natmarts",
+      company_address:
+        "Pahadi Shareef, Airport Road, Hyderabad - 05, TS, India",
     },
     footer: {
-      height: "28mm",
-      contents: {
-        first: "Cover page",
-        2: "Second page", // Any page number is working. 1-based index
-        default:
-          '<span style="color: #444;">{{page}}</span>/<span>{{pages}}</span>', // fallback value
-        last: "Last Page",
-      },
+      text: "Natmarts.com",
+    },
+    currency_symbol: "INR",
+    date: {
+      billing_date: JSON.stringify(new Date(order.date)).slice(1, 11),
+      due_date: null,
     },
   };
 
-  pdf
-    .create(
-      {
-        html: html,
-        data: {
-          data: orders,
-        },
-        path: "./output.pdf",
-        type: "",
-      },
-      options
-    )
-    .then((resp) => {
-      res.json(resp);
-    })
-    .catch((error) => {
-      res.json(error);
+  niceInvoice(
+    invoiceDetail,
+    path.join(__dirname, `../uploads/${order._id}.pdf`)
+  );
+  //  res.download(path.join(__dirname,'../uploads/invoice.pdf'))
+  try {
+    const s33 = await s3.uploadFile({
+      path: path.join(__dirname, `../uploads/${order._id}.pdf`),
+      filename: `${order._id}`,
     });
-});
-router.post("/post-review", auth, async (req, res) => {
-  const user = await User.findById(req.user._id).select("-password");
-  const result = { id: user._id, name: user.username, ...req.body };
-
-  const review = await ProductReview(result);
-  await review.save();
-
-  res.json(result);
+    console.log(s33);
+    return res.status(200).json({ ok: true, url: s33.Location });
+  } catch (er) {
+    return res.status(200).json({ ok: false, url: null });
+  }
 });
 
 router.get("/get-reviews/:id", async (req, res) => {
@@ -258,18 +322,47 @@ router.get("/delete-address", auth, async (req, res) => {
   res.json({ ok: true });
 });
 
-router.post("/update-billing", auth, async (req, res) => {
-
-  const userD = await User.findOne({_id:req.user._id})
-  const resss ={...userD.defaultAddress.formValues,...req.body}
-  
-  try {
-    await User.updateOne({_id:req.user._id},{$set:{defaultAddress:{formValues:resss}}})
-    return res.status(200).json({ok:true})
-  } catch{
-    return res.status(200).json({ok:false})
+router.post("/shippingCost", async (req, res) => {
+  const result = await Cost.findOne({ name: req.body.name });
+  console.log(result, req.body);
+  if (result) {
+    return res.status(200).json({ ok: false, message: "State Already Exists" });
   }
-  
+
+  try {
+    const re = new Cost(req.body);
+    await re.save();
+    return res.status(200).json({ ok: true, message: "Pricing Added" });
+  } catch (err) {
+    return res
+      .status(200)
+      .json({ ok: false, message: "failed to add product" });
+  }
+});
+
+router.get("/get-shippingCost", async (req, res) => {
+  const results = await Cost.find();
+  return res.status(200).json({ ok: true, data: results });
+});
+
+router.delete("/delete-pricing/:id", async (req, res) => {
+  const results = await Cost.deleteOne({ _id: req.params.id });
+  return res.status(200).json({ ok: true, data: results });
+});
+
+router.post("/update-billing", auth, async (req, res) => {
+  const userD = await User.findOne({ _id: req.user._id });
+  const resss = { ...userD.defaultAddress.formValues, ...req.body };
+
+  try {
+    await User.updateOne(
+      { _id: req.user._id },
+      { $set: { defaultAddress: { formValues: resss } } }
+    );
+    return res.status(200).json({ ok: true });
+  } catch {
+    return res.status(200).json({ ok: false });
+  }
 });
 
 router.post("/update-profile", auth, async (req, res) => {
@@ -284,23 +377,20 @@ router.post("/update-profile", auth, async (req, res) => {
   res.json({ ok: true });
 });
 
-router.post("/change-password", auth, async (req, res) => {
-  // const user = await User.findById(req.user._id);
+router.post("/change-password", async (req, res) => {
+  console.log(req.body);
+  const user = await User.findById({ _id: req.body.id });
 
-  // const validPassword = await bcrypt.compare(req.body.password, user.password);
-  // if (!validPassword)
-  //   return res.json({ status: 400, message: "Incorrect passsword", ok: false });
+  const salt = await bcrypt.genSalt(10);
+  let np = await bcrypt.hash(req.body.password, salt);
 
-  // const salt = await bcrypt.genSalt(10);
-  // let np = await bcrypt.hash(req.body.newPassword, salt);
-
-  // User.updateOne({ email: user.email }, { $set: { password: np } })
-  //   .then(() =>
-  //     res.json({ ok: true, message: "Password Changed Successfully" })
-  //   )
-  //   .catch(() =>
-  //     res.json({ ok: false, message: "Error while changing password" })
-  //   );
+  User.updateOne({ email: user.email }, { $set: { password: np } })
+    .then(() =>
+      res.json({ ok: true, message: "Password Changed Successfully" })
+    )
+    .catch(() =>
+      res.json({ ok: false, message: "Error while changing password" })
+    );
 
   return res.status(200);
 });
@@ -310,43 +400,105 @@ router.post("/reset", async (req, res) => {
   if (!user)
     return res.status(400).send({ ok: false, message: "User not found " });
 
-  let transporter = nodemailer.createTransport({
-    host: "smtp.mailgun.org",
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: "postmaster@sandbox1e9880cca1b64859b9166d7beaa10841.mailgun.org", // generated ethereal user
-      pass: "cd3f46ffdb7431cab0cabc05333187c1-77985560-0daf2770", // generated ethereal password
+  const msg = {
+    to: "sdfahad729@gmail.com", // Change to your recipient
+    from: "syedmohi04@gmail.com", // Change to your verified sender
+    subject: "Sending with SendGrid is Fun",
+    text: "and easy to do anywhere, even with Node.js",
+    templateId: "d-42ad1dfe6e9c4e0f84633588614fb44c",
+    dynamicTemplateData: {
+      url: `http://localhost:3000/reset/${user._id}`,
     },
-  });
+  };
+  sgMail
+    .send(msg)
+    .then(() => {
+      console.log("Email sent");
+      return res.status(200).json({
+        ok: true,
+        message:
+          "Thanks! If there's an account associated with this email, we'll send the password reset instructions immediately.",
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+      return res.status(200).json({ ok: false });
+    });
+});
 
-  let info = await transporter.sendMail({
-    from: "postmaster@sandbox1e9880cca1b64859b9166d7beaa10841.mailgun.org", // sender address
-    to: req.body.email, // list of receivers
-    subject: "Reset Password (Natmarts) ✔", // Subject line
-    text: "Please Click on the link below to reset the password", // plain text body
-    html: '<p>Click <a href="http://localhost:8000/change-password">here</a> to reset your password</p>',
-  });
+router.post("/order", async (req, res) => {
 
-  console.log("Message sent: %s", info.messageId);
-  if (info.messageId) {
-    return res
-      .status(200)
-      .json({ ok: true, message: `Reset link sent to ${req.body.email} ` });
-  } else {
-    return res
-      .status(400)
-      .json({ ok: true, message: "Email not sent, please try again later" });
+  const msg = {
+    to: "sdfahad729@gmail.com", // Change to your recipient
+    from: "syedmohi04@gmail.com", // Change to your verified sender
+    subject: "Sending with SendGrid is Fun",
+    text: `Please download your order from here ${req.body.link}`
+   
+  };
+  sgMail
+    .send(msg)
+    .then(() => {
+      console.log("Email sent");
+      return res.status(200).json({
+        ok: true,
+        message:
+          "Email Sent.",
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+      return res.status(200).json({ ok: false });
+    });
+});
+
+router.post("/app-register", async (req, res) => {
+  const hashPassword = await bcrypt.hash(req.body.password, 10);
+  try {
+    const newUser = new Deliveryapp({ ...req.body, password: hashPassword });
+    await newUser.save();
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.log(err.message);
+    return res.status(200).json({ ok: false });
   }
 });
 
 router.post("/app-login", async (req, res) => {
-  const { user, password } = req.body;
+  const user = await Deliveryapp.findOne({ user: req.body.user });
+  if (!user) return res.status(404).send("Invalid user or password");
 
-  if (user === "admin" && password === "admin123") {
+  const hashPassword = await bcrypt.compare(req.body.password, user.password);
+
+  if (hashPassword) {
     return res.status(200).json({ ok: true });
-  } else {
-    return res.status(200).json({ ok: false });
+  }
+});
+
+router.post("/app-cancellation", async (req, res) => {
+  try {
+    const result = await Orders.findOneAndUpdate(
+      { _id: req.body.id },
+      { $set: { orderStatus: req.body.status } }
+    );
+
+    return res
+      .status(200)
+      .json({ ok: true, message: "Status Changed.", result: result });
+  } catch (err) {
+    return res.status(400).json({
+      ok: true,
+      message: "Server Error, Please try again",
+      result: result,
+    });
+  }
+});
+
+router.get("/search-order/:id", async (req, res) => {
+  try {
+    const order = await Orders.findOne({ _id: req.params.id });
+    return res.status(200).send(order);
+  } catch (err) {
+    return res.status(404).send("Invalid Order ID");
   }
 });
 

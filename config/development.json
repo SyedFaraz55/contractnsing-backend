@@ -1,4 +1,4 @@
 {
     "name":"Natmarts",
-    "mongoURI" :"mongodb+srv://syed55:developer@cluster0.vqo8p.mongodb.net/?retryWrites=true&w=majority"
+    "mongoURI" :"mongodb+srv://syed55:developer@cluster0.vqo8p.mongodb.net/natmarts?retryWrites=true&w=majority"
 }
