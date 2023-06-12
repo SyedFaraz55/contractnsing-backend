@@ -76,6 +76,8 @@ router.post("/createOrder", auth, async (req, res) => {
   const user = await User.findById(req.user._id).select("-password");
   // if (error) return res.json({status:400,message:error.details[0].message});
 
+  console.log(req.body)
+
   order = new Orders({ ...req.body, userid: user._id });
 
   await order.save();
@@ -218,6 +220,7 @@ router.get("/product/:id", async (req, res) => {
 router.post("/razorpay", async (req, res) => {
   const { amount, name, mobile } = req.body;
   const id = orderid.generate();
+  console.log(id);
   const options = {
     amount: amount * 100,
     currency: "INR",
@@ -225,6 +228,7 @@ router.post("/razorpay", async (req, res) => {
   };
   try {
     const response = await razor.orders.create(options);
+
     res.send({
       name,
       mobile,
@@ -243,6 +247,7 @@ router.get("/test", async (req, res) => {});
 
 router.get("/pdf/:id", async (req, res) => {
   const order = await Orders.findOne({ _id: req.params.id });
+
   const invoiceDetail = {
     shipping: {
       name: order.info.firstname + " " + order.info.lastname,
@@ -255,9 +260,8 @@ router.get("/pdf/:id", async (req, res) => {
     items: order?.order?.map((pr) => {
       return {
         item: pr.name,
-        description: pr.description,
         quantity: pr.quantity,
-        price: 100,
+        price: pr.itemTotal,
         tax: "",
       };
     }),
@@ -272,22 +276,22 @@ router.get("/pdf/:id", async (req, res) => {
     footer: {
       text: "Natmarts.com",
     },
-    currency_symbol: "INR",
+    currency_symbol: "INR ",
     date: {
       billing_date: JSON.stringify(new Date(order.date)).slice(1, 11),
-      due_date: null,
+      due_date: "NULL",
     },
   };
-
+const filenumber = orderid.generate();
   niceInvoice(
     invoiceDetail,
-    path.join(__dirname, `../uploads/${order._id}.pdf`)
+    path.join(__dirname, `../uploads/${filenumber}.pdf`)
   );
   //  res.download(path.join(__dirname,'../uploads/invoice.pdf'))
   try {
     const s33 = await s3.uploadFile({
-      path: path.join(__dirname, `../uploads/${order._id}.pdf`),
-      filename: `${order._id}`,
+      path: path.join(__dirname, `../uploads/${filenumber}.pdf`),
+      filename: `${filenumber}`,
     });
     console.log(s33);
     return res.status(200).json({ ok: true, url: s33.Location });
