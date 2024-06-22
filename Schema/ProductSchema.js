@@ -5,11 +5,11 @@ const mongoose = require("mongoose");
 
 const ProductSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  arabic: { type: String, required: true },
-  telugu: { type: String, required: true },
+  arabic: { type: String, required: false },
+  telugu: { type: String, required: false },
   image: [{ type: String }],
-  basePrice: { type: String, required: true },
-  description: { type: String, required: true },
+  basePrice: { type: String, required: false },
+  description: { type: String, required: false },
   benefits: String,
   benefitsar:String,
   benefitstr:String,
@@ -19,7 +19,9 @@ const ProductSchema = new mongoose.Schema({
   reviews: [],
   category: { type: String, required: true },
   stock:{type:String},
-  aed:String
+  aed:String,
+  vendor:String,
+  type:String
   
 });
 
