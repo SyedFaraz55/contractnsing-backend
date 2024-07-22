@@ -4,16 +4,16 @@ const config = require("config");
 const mongoose = require("mongoose");
 
 const OrderSchema = new mongoose.Schema({
-  userid: { type: String, required: true, unique: false },
+  userid: { type: String, required: false, unique: false },
   info: {
     firstname: { type: String, required: true },
     lastname: { type: String, required: false },
-    email: { type: String, required: true },
+    email: { type: String, required: false },
     mobile: { type: String, required: true },
     address: { type: String, required: true },
-    city: { type: String, required: true },
-    country: { type: String, required: true },
-    code: { type: String, required: true },
+    city: { type: String, required: false },
+    country: { type: String, required: false },
+    code: { type: String, required: false },
     additional: { type: String, required: false },
     default: { type: Boolean, required: false },
     method: { type: String, required: true },
@@ -22,9 +22,11 @@ const OrderSchema = new mongoose.Schema({
     }
    
   },
+  id:String, 
   order: [],
+  status:{},
   orderStatus:Number,
-  cartTotal: { type: String, required: true },
+  cartTotal: { type: String, required: false },
   date: { type: Date, default: Date.now },
 });
 

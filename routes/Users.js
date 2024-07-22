@@ -8,6 +8,7 @@ const pdfInvoice = require("pdf-invoice");
 const niceInvoice = require("nice-invoice");
 const bcrypt = require("bcryptjs");
 const { User, validate } = require("../Schema/UserSchema");
+const axios = require("axios")
 sgMail.setApiKey(
   "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"
 );
@@ -71,6 +72,19 @@ router.post("/createUser", async (req, res) => {
   return res.header("x-auth-token", token).send(result);
 });
 
+router.post("/create-guest-order", async (req, res) => {
+  // const {error} = validateOrders({...req.body.info,order:req.body.order})
+
+  // if (error) return res.json({status:400,message:error.details[0].message});
+
+  order = new Orders({ ...req.body});
+
+  await order.save();
+
+  return res.json({ ...req.body});
+  // console.log({ ...req.body, userid: user._id })
+});
+
 router.post("/createOrder", auth, async (req, res) => {
   // const {error} = validateOrders({...req.body.info,order:req.body.order})
   const user = await User.findById(req.user._id).select("-password");
@@ -78,7 +92,7 @@ router.post("/createOrder", auth, async (req, res) => {
 
   console.log(req.body)
 
-  order = new Orders({ ...req.body, userid: user._id });
+  order = new Orders({ ...req.body, userid: user._id || "" ,id: _.uniqueId(`#${Math.floor(Math.random() * _.uniqueId())}`)});
 
   await order.save();
 
@@ -505,5 +519,72 @@ router.get("/search-order/:id", async (req, res) => {
     return res.status(404).send("Invalid Order ID");
   }
 });
+
+router.post("/telr",async(req,res)=> {
+
+  const options = {
+    method: 'POST',
+    url: 'https://secure.telr.com/gateway/order.json',
+    headers: {accept: 'application/json', 'Content-Type': 'application/json'},
+    data: {
+      method: 'create',
+      ref: "OrderRef",
+      store: process.env.STORE_ID,
+      authkey: process.env.AUTH_KEY,
+      framed: 0,
+      order: {
+        cartid: req.body.order[0]._id,
+        test: '1',
+        amount: `${req.body.order[0].itemTotal}`,
+        currency: 'AED',
+        description:req.body.order[0].name, 
+      },
+      return: {
+        authorised: `https://www.phonebay.ae/verify`,
+        declined: 'https://www.phonebay.ae/checkout',
+        cancelled: 'https://www.phonebay.ae/checkout'
+      }
+    }
+  };
+
+
+  axios
+  .request(options)
+  .then(function (response) {
+    return res.json({status:response.data, order:req.body})
+  })
+  .catch(function (error) {
+    return res.json(response.data)
+  });
+})
+
+router.post("/telr-status",async(req,res)=> {
+
+  const options = {
+    method: 'POST',
+    url: 'https://secure.telr.com/gateway/order.json',
+    headers: {accept: 'application/json', 'Content-Type': 'application/json'},
+    data: {
+      method: 'check',
+      store: process.env.STORE_ID,
+      authkey: process.env.AUTH_KEY,
+      order: {ref: req.body.ref}
+    }
+  };
+  
+  axios
+    .request(options)
+    .then(function (response) {
+      return res.json(response.data)
+    })
+    .catch(function (error) {
+      console.error(error);
+    });
+})
+
+router.get("/track/:id", async(req,res) => {
+  const order = await Orders.find({id: req.params.id})
+  return res.json(order)
+})
 
 module.exports = router;
