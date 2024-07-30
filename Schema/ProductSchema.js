@@ -21,7 +21,8 @@ const ProductSchema = new mongoose.Schema({
   stock:{type:String},
   aed:String,
   vendor:String,
-  type:String
+  type:String,
+  colorVariants:[]
   
 });
 
