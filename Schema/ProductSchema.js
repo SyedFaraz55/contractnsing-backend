@@ -22,7 +22,11 @@ const ProductSchema = new mongoose.Schema({
   aed:String,
   vendor:String,
   type:String,
-  colorVariants:[]
+  colorVariants:[],
+  status:{
+    type:Boolean,
+    default:true
+  }
   
 });
 

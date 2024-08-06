@@ -117,6 +117,20 @@ router.post("/update", async (req, res) => {
   // console.log({ ...req.body, userid: user._id })
 });
 
+router.post("/update-status", async(req,res) => {
+  try {
+    await Product.updateOne({_id:req.body.id},{
+      $set:{
+        status:req.body.status
+      }
+    })
+    return res.json({ok:true})
+  }catch(error) {
+    console.log(error)
+    return res.json(error);
+  }
+})
+
 router.post("/update-category", async (req, res) => {
   const query = { _id: req.body._id };
   console.log(query);
@@ -154,7 +168,7 @@ router.get("/health", async (req, res) => {
   return res.status(200).send("OK");
 });
 router.get("/products", async (req, res) => {
-  const products = await Product.find({});
+  const products = await Product.find({status:true})
   res.status(200).json(products);
 });
 router.get("/search", async (req, res) => {
