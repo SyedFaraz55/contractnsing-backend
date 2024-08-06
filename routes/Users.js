@@ -171,6 +171,11 @@ router.get("/products", async (req, res) => {
   const products = await Product.find({status:true})
   res.status(200).json(products);
 });
+
+router.get("/all-products", async (req, res) => {
+  const products = await Product.find({})
+  res.status(200).json(products);
+});
 router.get("/search", async (req, res) => {
   console.log(req.query, "search >> ");
   if (req.query.q) {
