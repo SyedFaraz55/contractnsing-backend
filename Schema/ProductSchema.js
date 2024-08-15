@@ -23,6 +23,9 @@ const ProductSchema = new mongoose.Schema({
   vendor:String,
   type:String,
   colorVariants:[],
+  storages:[],
+  condition:[],
+  brand:String,
   status:{
     type:Boolean,
     default:true

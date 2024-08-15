@@ -606,4 +606,25 @@ router.get("/track/:id", async(req,res) => {
   return res.json(order)
 })
 
+
+router.post("/product-search", async(req,res)=> {
+  const filter = {}
+  console.log(req.body)
+  if(req.body.query.condition) {
+    filter['type'] = {$in:req.body.query?.condition?.split(",")}
+  }
+
+  if(req.body.query.storage) {
+    const products = await Product.find({
+      $or: req.body.query?.storage?.split(',').map((storageName) => ({
+        storages: { $elemMatch: { name: storageName.trim() } }
+      }))
+    });
+    return res.json(products) 
+  }
+
+  const products = await Product.find(filter);
+  return res.json(products)
+})
+
 module.exports = router;
