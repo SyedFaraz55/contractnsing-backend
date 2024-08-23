@@ -13,5 +13,5 @@ const CostSchema = new mongoose.Schema({
 });
 
 
-const Cost = mongoose.model("natmarts.shippingCost", CostSchema);
+const Cost = mongoose.model("shippingCost", CostSchema);
 exports.Cost = Cost;

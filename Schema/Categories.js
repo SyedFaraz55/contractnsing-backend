@@ -13,5 +13,5 @@ const CategorySchema = new mongoose.Schema({
 });
 
 
-const Category = mongoose.model("natmarts.categories", CategorySchema);
+const Category = mongoose.model("categories", CategorySchema);
 exports.Category = Category;

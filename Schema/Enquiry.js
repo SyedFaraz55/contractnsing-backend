@@ -19,5 +19,5 @@ const EnquirySchema = new mongoose.Schema({
 });
 
 
-const Enquiry = mongoose.model("natmarts.enquiry", EnquirySchema);
+const Enquiry = mongoose.model("enquiry", EnquirySchema);
 exports.Enquiry = Enquiry;

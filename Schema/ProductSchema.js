@@ -29,7 +29,9 @@ const ProductSchema = new mongoose.Schema({
   status:{
     type:Boolean,
     default:true
-  }
+  },
+  color:{type:String},
+  hotdeal:{type:Boolean}
   
 });
 

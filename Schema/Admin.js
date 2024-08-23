@@ -27,5 +27,5 @@ AdminSchema.methods.generateAuthToken = function () {
 };
 
 
-const Admin = mongoose.model("natmarts.admin", AdminSchema);
+const Admin = mongoose.model("admin", AdminSchema);
 exports.Admin = Admin;

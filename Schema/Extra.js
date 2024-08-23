@@ -10,5 +10,5 @@ const ExtraSchema = new mongoose.Schema({
 });
 
 
-const Extra = mongoose.model("natmarts.extra", ExtraSchema);
+const Extra = mongoose.model("extra", ExtraSchema);
 exports.Extra = Extra;

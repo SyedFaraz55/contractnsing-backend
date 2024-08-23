@@ -17,10 +17,7 @@ const OrderSchema = new mongoose.Schema({
     additional: { type: String, required: false },
     default: { type: Boolean, required: false },
     method: { type: String, required: true },
-    state:{
-      type:Object
-    }
-   
+    state:{type:Object},    
   },
   id:String, 
   order: [],
@@ -28,6 +25,7 @@ const OrderSchema = new mongoose.Schema({
   orderStatus:Number,
   cartTotal: { type: String, required: false },
   date: { type: Date, default: Date.now },
+  fastTrack: {type:Boolean, default:false}
 });
 
 OrderSchema.methods.generateAuthToken = function () {

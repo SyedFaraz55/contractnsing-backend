@@ -614,12 +614,24 @@ router.post("/product-search", async(req,res)=> {
     filter['type'] = {$in:req.body.query?.condition?.split(",")}
   }
 
+  if(req.body.query.color) {
+    filter['color'] = {$in:req.body.query?.color?.split(",")}
+  }
+
   if(req.body.query.storage) {
     const products = await Product.find({
       $or: req.body.query?.storage?.split(',').map((storageName) => ({
-        storages: { $elemMatch: { name: storageName.trim() } }
+        storages: { $elemMatch: { name: { $regex: storageName, $options: 'i' }  } }
       }))
     });
+    return res.json(products) 
+  }
+
+  if(req.body.query.brand) {
+    const _key = req.body.query.brand == "Apple" ? "iphone" : req.body.query.brand
+    const products = await Product.find({
+      name: { $regex: _key, $options: 'i' } // 'i' for case-insensitive search
+  });
     return res.json(products) 
   }
 
