@@ -31,7 +31,8 @@ const ProductSchema = new mongoose.Schema({
     default:true
   },
   color:{type:String},
-  hotdeal:{type:Boolean}
+  hotdeal:{type:Boolean},
+  defaultCondition:{type:String},
   
 });
 
