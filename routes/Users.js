@@ -628,11 +628,23 @@ router.post("/product-search", async(req,res)=> {
   }
 
   if(req.body.query.brand) {
-    const _key = req.body.query.brand == "Apple" ? "iphone" : req.body.query.brand
-    const products = await Product.find({
-      name: { $regex: _key, $options: 'i' } // 'i' for case-insensitive search
-  });
-    return res.json(products) 
+
+    if(!req.body.query?.brand?.includes(",")) {
+      console.log(req.body.query?.brand)
+
+      const products = await Product.find({ name: { $regex: req.body.query?.brand, $options: 'i' }  }) 
+      console.log('result')
+      return res.json(products) 
+    } else {
+    //   const products = await Product.find({
+    //   $or: req.body.query?.brand?.split(',').map((brandName) => ({
+    //     name: { $regex: brandName, $options: 'i' }  
+    //   }))
+    // }); 
+    // return res.json(products) 
+    }
+
+  
   }
 
   const products = await Product.find(filter);
