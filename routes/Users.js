@@ -168,7 +168,7 @@ router.get("/health", async (req, res) => {
   return res.status(200).send("OK");
 });
 router.get("/products", async (req, res) => {
-  const products = await Product.find({status:true})
+  const products = await Product.find({status:true}).limit(18)
   res.status(200).json(products);
 });
 
@@ -608,8 +608,18 @@ router.get("/track/:id", async(req,res) => {
 
 
 router.post("/product-search", async(req,res)=> {
-  const filter = {}
-  console.log(req.body)
+  let filter = {}
+
+  const priceMap = {
+    "0":{},
+    "1000":{price:{$lte:1000}},
+    "2000":{price:{$lte:2000, $gte:1000}},
+    "3000":{price:{$lte:3000, $gte:2000}},
+    "4000":{price:{$lte:4000, $gte:3000}},
+  }
+  if(req.body.query['price']>0) {
+    filter['price'] = req.body.query['price']
+  }
   if(req.body.query.condition) {
     filter['type'] = {$in:req.body.query?.condition?.split(",")}
   }
@@ -647,8 +657,11 @@ router.post("/product-search", async(req,res)=> {
   
   }
 
-  const products = await Product.find(filter);
+  const query = filter.price ? priceMap[filter.price] : filter;
+  const products = await Product.find(query);
   return res.json(products)
 })
+
+router.post("")
 
 module.exports = router;
