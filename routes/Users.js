@@ -85,7 +85,7 @@ router.post("/create-guest-order", async (req, res) => {
   // console.log({ ...req.body, userid: user._id })
 });
 
-router.post("/createOrder", auth, async (req, res) => {
+router.post("/createOrder", async (req, res) => {
   // const {error} = validateOrders({...req.body.info,order:req.body.order})
   const user = await User.findById(req.user._id).select("-password");
   // if (error) return res.json({status:400,message:error.details[0].message});
@@ -540,7 +540,6 @@ router.get("/search-order/:id", async (req, res) => {
 });
 
 router.post("/telr",async(req,res)=> {
-
   const options = {
     method: 'POST',
     url: 'https://secure.telr.com/gateway/order.json',
@@ -554,12 +553,12 @@ router.post("/telr",async(req,res)=> {
       order: {
         cartid: req.body.order[0]._id,
         test: '1',
-        amount: `${req.body.order[0].itemTotal}`,
+        amount: `${req.body.cartTotal}`,
         currency: 'AED',
         description:req.body.order[0].name, 
       },
       return: {
-        authorised: `https://www.phonebay.ae/verify`,
+        authorised: `http://localhost:3000/verify`,
         declined: 'https://www.phonebay.ae/checkout',
         cancelled: 'https://www.phonebay.ae/checkout'
       }
