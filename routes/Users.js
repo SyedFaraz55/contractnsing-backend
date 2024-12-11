@@ -38,6 +38,22 @@ var razor = new Razorpay({
   key_id: "rzp_test_qxsRuZfigMmu3O",
   key_secret: "GyT6kJjJfDSt4b318RN56JTP",
 });
+// Helper function to generate tokens
+const generateTokens = (user) => {
+  const accessToken = jwt.sign(
+    { _id: user._id, email: user.email },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "15m" } // Access Token expires in 15 minutes
+  );
+
+  const refreshToken = jwt.sign(
+    { _id: user._id, email: user.email },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "7d" } // Refresh Token expires in 7 days
+  );
+
+  return { accessToken, refreshToken };
+};
 
 router.get("/", auth, async (req, res) => {
   const results = await User.find();
@@ -49,28 +65,61 @@ router.get("/profile", auth, async (req, res) => {
   res.send(user);
 });
 
-router.post("/createUser", async (req, res) => {
+// router.post("/createUser", async (req, res) => {
+//   const { error } = validate(req.body);
+
+//   if (error)
+//     return res
+//       .status(400)
+//       .json({ ok: false, message: error.details[0].message });
+//   console.log(error);
+
+//   let user = await User.findOne({ email: req.body.email });
+//   if (user)
+//     return res.status(400).json({ ok: false, message: "User already exits" });
+
+//   user = new User(req.body);
+//   const salt = await bcrypt.genSalt(10);
+//   user.password = await bcrypt.hash(user.password, salt);
+//   await user.save();
+
+//   const token = user.generateAuthToken();
+//   const result = _.pick(user, ["_id", "email", "username"]);
+//   return res.header("x-auth-token", token).send(result);
+// });
+
+// User creation route
+router.post("/register", async (req, res) => {
   const { error } = validate(req.body);
 
   if (error)
     return res
       .status(400)
       .json({ ok: false, message: error.details[0].message });
-  console.log(error);
 
   let user = await User.findOne({ email: req.body.email });
   if (user)
-    return res.status(400).json({ ok: false, message: "User already exits" });
+    return res.status(400).json({ ok: false, message: "User already exists" });
 
   user = new User(req.body);
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(user.password, salt);
   await user.save();
 
-  const token = user.generateAuthToken();
-  const result = _.pick(user, ["_id", "email", "username"]);
-  return res.header("x-auth-token", token).send(result);
+  const { accessToken, refreshToken } = generateTokens(user);
+
+  res
+    .cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true, // Ensures cookie is sent only over HTTPS
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    })
+    .json({ accessToken });
 });
+
+
+
 
 router.post("/create-guest-order", async (req, res) => {
   // const {error} = validateOrders({...req.body.info,order:req.body.order})
@@ -596,7 +645,7 @@ router.post("/telr-status",async(req,res)=> {
       return res.json(response.data)
     })
     .catch(function (error) {
-      console.error(error);
+      // console.error(error);
     });
 })
 

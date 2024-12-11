@@ -16,6 +16,23 @@ const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(
   "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"
 );
+
+// Helper function to generate tokens
+const generateTokens = (user) => {
+  const accessToken = jwt.sign(
+    { _id: user._id, email: user.email },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "15m" } // Access Token expires in 15 minutes
+  );
+
+  const refreshToken = jwt.sign(
+    { _id: user._id, email: user.email },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "7d" } // Refresh Token expires in 7 days
+  );
+
+  return { accessToken, refreshToken };
+};
 router.post("/add-user", async (req, res) => {
   let admin = await Admin.findOne({ user: req.body.user });
   if (admin)
