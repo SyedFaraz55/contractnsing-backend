@@ -602,7 +602,7 @@ router.post("/telr",async(req,res)=> {
         description:req.body.order[0].name, 
       },
       return: {
-        authorised: `http://localhost:3000/verify`,
+        authorised: `https://www.phonebay.ae/verify`,
         declined: 'https://www.phonebay.ae/checkout',
         cancelled: 'https://www.phonebay.ae/checkout'
       }
