@@ -92,33 +92,26 @@ router.get("/profile", auth, async (req, res) => {
 router.post("/register", async (req, res) => {
   const { error } = validate(req.body);
 
-  if (error)
+  if (error) {
     return res
       .status(400)
       .json({ ok: false, message: error.details[0].message });
+  }
 
   let user = await User.findOne({ email: req.body.email });
-  if (user)
-    return res.status(400).json({ ok: false, message: "User already exists" });
+  if (user) {
+    return res
+      .status(400)
+      .json({ ok: false, message: "User already exists" });
+  }
 
   user = new User(req.body);
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(user.password, salt);
   await user.save();
 
-  const { accessToken, refreshToken } = generateTokens(user);
-
-  res
-    .cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true, // Ensures cookie is sent only over HTTPS
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    })
-    .json({ accessToken });
+  return res.status(201).json({ ok: true, message: "User successfully created" });
 });
-
-
 
 
 router.post("/create-guest-order", async (req, res) => {
@@ -134,7 +127,9 @@ router.post("/create-guest-order", async (req, res) => {
   // console.log({ ...req.body, userid: user._id })
 });
 
-router.post("/createOrder", async (req, res) => {
+router.post("/createOrder", auth, async (req, res) => {
+  console.log('creating order ...')
+  console.log(req.user)
   // const {error} = validateOrders({...req.body.info,order:req.body.order})
   const user = await User.findById(req.user._id).select("-password");
   // if (error) return res.json({status:400,message:error.details[0].message});
@@ -621,7 +616,7 @@ router.post("/telr",async(req,res)=> {
     return res.json({status:response.data, order:req.body})
   })
   .catch(function (error) {
-    return res.json(response.data)
+   console.log(error,'error')
   });
 })
 

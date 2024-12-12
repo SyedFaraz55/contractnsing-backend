@@ -6,7 +6,21 @@ const Joi = require("joi");
 const config = require("config");
 const jwt = require("jsonwebtoken");
 const { User, validate:CheckValidate } = require("../Schema/UserSchema");
+const generateTokens = (user) => {
+  const accessToken = jwt.sign(
+    { _id: user._id, email: user.email },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "15m" } // Access Token expires in 15 minutes
+  );
 
+  const refreshToken = jwt.sign(
+    { _id: user._id, email: user.email },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "7d" } // Refresh Token expires in 7 days
+  );
+
+  return { accessToken, refreshToken };
+};
 router.post("/checkUser", async (req, res) => {
   console.log(req.body)
   const { error } = CheckValidate(req.body)
@@ -48,29 +62,34 @@ router.get("/", async (req, res) => {
 
 // Login route
 router.post("/login", async (req, res) => {
-  const { error } = validate(req.body);
+  const { email, password } = req.body;
 
-  if (error)
-    return res.status(400).json({ message: error.details[0].message });
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res
+      .status(400)
+      .json({ ok: false, message: "Invalid email or password" });
+  }
 
-  let user = await User.findOne({ email: req.body.email });
-  if (!user)
-    return res.status(400).json({ message: "Invalid email or password" });
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    return res
+      .status(400)
+      .json({ ok: false, message: "Invalid email or password" });
+  }
 
-  const validPassword = await bcrypt.compare(req.body.password, user.password);
-  if (!validPassword)
-    return res.status(400).json({ message: "Invalid email or password" });
-
+  // Generate tokens
   const { accessToken, refreshToken } = generateTokens(user);
 
+  // Set refreshToken as httpOnly cookie
   res
     .cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production", // Use secure cookies in production
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     })
-    .json({ accessToken });
+    .json({ ok: true, accessToken });
 });
 
 // Refresh Token route

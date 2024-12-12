@@ -16,7 +16,10 @@ app.use("/uploads",express.static("uploads"))
 app.use(morgan("tiny"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(cors())
+app.use(cors({
+  origin: '*',
+  credentials: true
+}))
 
 const PORT = process.env.PORT || 8000;
 const MONGOURI = process.env.mongoURI || config.get("mongoURI");
