@@ -28,7 +28,7 @@ const ProductSchema = new mongoose.Schema({
   brand:String,
   status:{
     type:Boolean,
-    default:true
+    default:false
   },
   color:{type:String},
   hotdeal:{type:Boolean},
