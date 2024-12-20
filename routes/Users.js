@@ -701,7 +701,7 @@ router.post("/product-search", async(req,res)=> {
   }
 
   const query = filter.price ? priceMap[filter.price] : filter;
-  const products = await Product.find(query);
+  const products = await Product.find(query).where({ status:true });
   return res.json(products)
 })
 
