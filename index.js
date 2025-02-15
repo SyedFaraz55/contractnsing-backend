@@ -17,10 +17,10 @@ app.use(morgan("tiny"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors({
-  origin: '*',
-  credentials: true
-}))
-
+  origin: "https://www.phonebay.ae", // Replace with your frontend URL
+  methods: "GET,POST,PUT,DELETE",
+  allowedHeaders: "Content-Type,Authorization"
+}));
 const PORT = process.env.PORT || 8000;
 const MONGOURI = process.env.mongoURI || config.get("mongoURI");
 
