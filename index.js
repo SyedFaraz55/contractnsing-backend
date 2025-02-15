@@ -5,6 +5,25 @@ const express = require("express");
 const { default: mongoose } = require("mongoose");
 const morgan = require("morgan");
 const cors  = require('cors')
+
+
+const allowedOrigins = [
+  "http://localhost:3000",  // Local development
+  "https://www.phonebay.ae" // Production domain
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: "GET,POST,PUT,DELETE",
+  allowedHeaders: "Content-Type,Authorization"
+}));
+
 const app = express();
 
 if (!config.get("jwtPrivateKey")) {
@@ -16,11 +35,7 @@ app.use("/uploads",express.static("uploads"))
 app.use(morgan("tiny"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(cors({
-  origin: "https://www.phonebay.ae", // Replace with your frontend URL
-  methods: "GET,POST,PUT,DELETE",
-  allowedHeaders: "Content-Type,Authorization"
-}));
+
 const PORT = process.env.PORT || 8000;
 const MONGOURI = process.env.mongoURI || config.get("mongoURI");
 
