@@ -584,7 +584,7 @@ router.get("/search-order/:id", async (req, res) => {
 });
 
 router.post("/telr",async(req,res)=> {
-  const mode = process.env.MODE || '1'
+  const mode = '1' 
   const options = {
     method: 'POST',
     url: 'https://secure.telr.com/gateway/order.json',
